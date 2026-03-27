@@ -1,0 +1,7 @@
+node_modules
+uploads/*.png
+!uploads/placeholder.png
+.env
+db.json
+test_api.js
+verify_fix.js

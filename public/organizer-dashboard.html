@@ -1,0 +1,687 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>PrintShop · Organizer Dashboard | Manage Print Polls</title>
+    <!-- Tailwind CSS + Google Fonts + Font Awesome -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700;14..32,800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        /* ============================================
+           GLOBAL STYLES - Consistent with Homepage
+           ============================================ */
+        * {
+            font-family: 'Inter', sans-serif;
+        }
+        
+        body {
+            background: #0f172a;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+        
+        /* Glassmorphism Navbar */
+        .glass-nav {
+            background: rgba(15, 23, 42, 0.75);
+            backdrop-filter: blur(16px);
+            border-bottom: 1px solid rgba(99, 102, 241, 0.2);
+            transition: all 0.3s ease;
+        }
+        
+        .glass-nav.scrolled {
+            background: rgba(10, 14, 23, 0.9);
+            backdrop-filter: blur(20px);
+            box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.3);
+        }
+        
+        /* Glassmorphism Cards */
+        .glass-card {
+            background: rgba(15, 25, 45, 0.65);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(99, 102, 241, 0.2);
+            border-radius: 1.5rem;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        
+        .glass-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 20px 35px -12px rgba(99, 102, 241, 0.25);
+            border-color: rgba(99, 102, 241, 0.4);
+        }
+        
+        /* Form Input Styles */
+        .input-glass {
+            background: rgba(10, 20, 35, 0.6);
+            border: 1px solid rgba(99, 102, 241, 0.25);
+            border-radius: 1rem;
+            transition: all 0.2s ease;
+            color: white;
+        }
+        
+        .input-glass:focus {
+            outline: none;
+            border-color: #6366f1;
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+            background: rgba(10, 20, 35, 0.8);
+        }
+        
+        .input-glass::placeholder {
+            color: rgba(148, 163, 184, 0.6);
+        }
+        
+        /* Button Styles */
+        .btn-gradient-primary {
+            background: linear-gradient(105deg, #4f46e5, #6366f1);
+            transition: transform 0.2s ease, box-shadow 0.2s;
+        }
+        
+        .btn-gradient-primary:hover {
+            transform: scale(1.02);
+            box-shadow: 0 10px 25px -5px rgba(99, 102, 241, 0.4);
+        }
+        
+        .btn-gradient-secondary {
+            background: linear-gradient(105deg, #0f172a, #1e293b);
+            border: 1px solid rgba(99, 102, 241, 0.4);
+            transition: all 0.2s ease;
+        }
+        
+        .btn-gradient-secondary:hover {
+            border-color: #6366f1;
+            background: rgba(99, 102, 241, 0.1);
+        }
+        
+        .btn-success {
+            background: linear-gradient(105deg, #059669, #10b981);
+        }
+        
+        .btn-danger {
+            background: linear-gradient(105deg, #dc2626, #ef4444);
+        }
+        
+        /* Status Badges */
+        .status-badge {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.7rem;
+            font-weight: 600;
+        }
+        
+        .status-verified {
+            background: rgba(16, 185, 129, 0.2);
+            color: #6ee7b7;
+            border: 1px solid rgba(16, 185, 129, 0.3);
+        }
+        
+        .status-pending {
+            background: rgba(245, 158, 11, 0.2);
+            color: #fcd34d;
+            border: 1px solid rgba(245, 158, 11, 0.3);
+        }
+        
+        .status-rejected {
+            background: rgba(239, 68, 68, 0.2);
+            color: #fca5a5;
+            border: 1px solid rgba(239, 68, 68, 0.3);
+        }
+        
+        /* Poll Card */
+        .poll-card {
+            background: rgba(10, 20, 35, 0.7);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(99, 102, 241, 0.2);
+            border-radius: 1.2rem;
+            transition: all 0.3s ease;
+        }
+        
+        .poll-card:hover {
+            transform: translateY(-3px);
+            border-color: rgba(99, 102, 241, 0.5);
+        }
+        
+        /* Timer Progress */
+        .timer-progress {
+            transition: width 1s linear;
+        }
+        
+        /* Modal */
+        .modal-overlay {
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(8px);
+        }
+        
+        /* Summary Cards */
+        .summary-card {
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.15), rgba(139, 92, 246, 0.1));
+            border: 1px solid rgba(99, 102, 241, 0.3);
+        }
+        
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: #0f172a;
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: linear-gradient(135deg, #4f46e5, #8b5cf6);
+            border-radius: 10px;
+        }
+        
+        /* Active Nav Link */
+        .nav-active {
+            color: #6366f1;
+            border-bottom: 2px solid #6366f1;
+        }
+        
+        /* Table Styles */
+        .table-glass {
+            background: rgba(10, 20, 35, 0.4);
+        }
+        
+        .table-glass th {
+            background: rgba(15, 25, 45, 0.6);
+            padding: 12px;
+        }
+        
+        .table-glass td {
+            padding: 12px;
+            border-bottom: 1px solid rgba(99, 102, 241, 0.1);
+        }
+        
+        /* Gradient Text */
+        .gradient-text {
+            background: linear-gradient(135deg, #818cf8, #c084fc);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+        
+        /* Alert Styling */
+        .alert-glass {
+            background: rgba(239, 68, 68, 0.2);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            border-radius: 1rem;
+        }
+        
+        .alert-success-glass {
+            background: rgba(16, 185, 129, 0.2);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ==================== NAVIGATION BAR ==================== -->
+    <nav id="navbar" class="fixed top-0 left-0 w-full z-50 glass-nav transition-all duration-300">
+        <div class="max-w-7xl mx-auto px-5 md:px-8 py-4 flex justify-between items-center">
+            <!-- Logo -->
+            <div class="flex items-center gap-2 cursor-pointer group" onclick="window.location.href='index.html'">
+                <div class="bg-indigo-500/20 p-2 rounded-xl group-hover:bg-indigo-500/30 transition">
+                    <i class="fas fa-print text-2xl text-indigo-400"></i>
+                </div>
+                <span class="text-2xl font-extrabold tracking-tight">
+                    <span class="text-white">Print</span><span class="text-indigo-400">Shop</span>
+                </span>
+            </div>
+            
+            <!-- Navigation Links -->
+            <div class="hidden md:flex items-center gap-4">
+                <button onclick="showSection('dashboard')" id="navDashboard" class="text-slate-300 hover:text-indigo-400 transition text-sm font-medium px-3 py-1">Dashboard</button>
+                <button onclick="showSection('createPoll')" id="navCreatePoll" class="text-slate-300 hover:text-indigo-400 transition text-sm font-medium px-3 py-1">Create Poll</button>
+                <button onclick="showSection('activePolls')" id="navActivePolls" class="text-slate-300 hover:text-indigo-400 transition text-sm font-medium px-3 py-1">Active Polls</button>
+                <button onclick="showSection('paymentVerification')" id="navPaymentVerification" class="text-slate-300 hover:text-indigo-400 transition text-sm font-medium px-3 py-1">Payment Verification</button>
+                <button onclick="showSection('printSummary')" id="navPrintSummary" class="text-slate-300 hover:text-indigo-400 transition text-sm font-medium px-3 py-1">Print Summary</button>
+                <button onclick="showSection('profile')" id="navProfile" class="text-slate-300 hover:text-indigo-400 transition text-sm font-medium px-3 py-1">Profile</button>
+                <button onclick="logoutUser()" class="px-4 py-2 rounded-full bg-red-500/20 hover:bg-red-500/30 text-red-300 text-sm font-medium transition">
+                    <i class="fas fa-sign-out-alt mr-1"></i> Logout
+                </button>
+            </div>
+            
+            <!-- Mobile Menu Button -->
+            <div class="md:hidden">
+                <button id="mobileMenuBtn" class="text-slate-300 text-xl">
+                    <i class="fas fa-bars"></i>
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <main class="max-w-7xl mx-auto px-5 pt-24 pb-12">
+        
+        <!-- ==================== WELCOME SECTION ==================== -->
+        <div id="welcomeSection" class="glass-card p-6 mb-8">
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                <div>
+                    <h1 class="text-2xl md:text-3xl font-bold text-white">
+                        Welcome, <span id="organizerName" class="gradient-text">Organizer</span> 👋
+                    </h1>
+                    <p class="text-slate-400 mt-1">Manage print polls and verify student payments.</p>
+                </div>
+                <div class="flex items-center gap-3 text-sm">
+                    <div class="bg-indigo-500/20 px-4 py-2 rounded-full">
+                        <i class="fas fa-envelope mr-2 text-indigo-400"></i>
+                        <span id="organizerEmail" class="text-slate-300">organizer@printshop.edu</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- ==================== DASHBOARD SECTION ==================== -->
+        <div id="dashboardSection" class="space-y-6">
+            <!-- Summary Cards -->
+            <div class="grid md:grid-cols-3 gap-5">
+                <div class="summary-card glass-card p-5 text-center">
+                    <i class="fas fa-users text-3xl text-indigo-400 mb-2"></i>
+                    <div class="text-2xl font-bold text-white" id="totalStudentsJoined">0</div>
+                    <div class="text-slate-400 text-sm">Total Students Joined</div>
+                </div>
+                <div class="summary-card glass-card p-5 text-center">
+                    <i class="fas fa-copy text-3xl text-cyan-400 mb-2"></i>
+                    <div class="text-2xl font-bold text-white" id="totalCopiesRequested">0</div>
+                    <div class="text-slate-400 text-sm">Total Copies Requested</div>
+                </div>
+                <div class="summary-card glass-card p-5 text-center">
+                    <i class="fas fa-rupee-sign text-3xl text-green-400 mb-2"></i>
+                    <div class="text-2xl font-bold text-white" id="totalPaymentCollected">₹0</div>
+                    <div class="text-slate-400 text-sm">Total Payment Collected</div>
+                </div>
+            </div>
+            
+            <!-- Recent Activity -->
+            <div class="glass-card p-5">
+                <h3 class="text-lg font-bold text-white mb-3 flex items-center gap-2">
+                    <i class="fas fa-clock text-indigo-400"></i> Recent Activity
+                </h3>
+                <div id="recentActivityList" class="space-y-2 max-h-64 overflow-y-auto">
+                    <div class="text-slate-400 text-sm">No recent activity</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- ==================== CREATE POLL SECTION ==================== -->
+        <div id="createPollSection" class="hidden">
+            <div class="glass-card p-6">
+                <h2 class="text-2xl font-bold text-white mb-5 flex items-center gap-2">
+                    <i class="fas fa-plus-circle text-indigo-400"></i> Create New Print Poll
+                </h2>
+                <form id="createPollForm" class="space-y-5">
+                    <div class="grid md:grid-cols-2 gap-5">
+                        <div>
+                            <label class="block text-slate-300 text-sm mb-2">Assignment / Subject Name *</label>
+                            <input type="text" id="assignmentName" required class="input-glass w-full px-4 py-3 rounded-xl">
+                        </div>
+                        <div>
+                            <label class="block text-slate-300 text-sm mb-2">Price per Copy (₹) *</label>
+                            <input type="number" id="pricePerCopy" required min="1" class="input-glass w-full px-4 py-3 rounded-xl">
+                        </div>
+                        <div>
+                            <label class="block text-slate-300 text-sm mb-2">Expiry Time (Hours) *</label>
+                            <select id="expiryTime" class="input-glass w-full px-4 py-3 rounded-xl">
+                                <option value="1">1 Hour</option>
+                                <option value="2">2 Hours</option>
+                                <option value="3">3 Hours</option>
+                                <option value="6">6 Hours</option>
+                                <option value="12">12 Hours</option>
+                                <option value="24">24 Hours</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-slate-300 text-sm mb-2">Upload Document (PDF/Word)</label>
+                            <input type="file" id="documentFile" accept=".pdf,.doc,.docx" class="w-full text-slate-300 text-sm">
+                        </div>
+                        <div class="md:col-span-2">
+                            <label class="block text-slate-300 text-sm mb-2">UPI QR Code Image *</label>
+                            <input type="file" id="qrCodeImage" accept="image/*" required class="w-full text-slate-300 text-sm">
+                            <div id="qrPreview" class="mt-2 hidden">
+                                <img id="qrPreviewImg" class="h-24 rounded-lg border border-indigo-500/30">
+                            </div>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn-gradient-primary w-full md:w-auto px-8 py-3 rounded-xl font-bold">
+                        <i class="fas fa-rocket mr-2"></i> Create Poll
+                    </button>
+                </form>
+            </div>
+        </div>
+        
+        <!-- ==================== ACTIVE POLLS SECTION ==================== -->
+        <div id="activePollsSection" class="hidden">
+            <h2 class="text-2xl font-bold text-white mb-5 flex items-center gap-2">
+                <i class="fas fa-poll text-indigo-400"></i> Active Polls
+            </h2>
+            <div id="activePollsGrid" class="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
+                <!-- Poll cards will be inserted here -->
+            </div>
+        </div>
+        
+        <!-- ==================== PAYMENT VERIFICATION SECTION ==================== -->
+        <div id="paymentVerificationSection" class="hidden">
+            <h2 class="text-2xl font-bold text-white mb-5 flex items-center gap-2">
+                <i class="fas fa-check-double text-indigo-400"></i> Payment Verification
+            </h2>
+            <div class="glass-card overflow-hidden">
+                <div class="overflow-x-auto">
+                    <table class="w-full table-glass">
+                        <thead>
+                            <tr class="text-slate-300 text-sm">
+                                <th class="text-left">Student Name</th>
+                                <th class="text-left">Poll Name</th>
+                                <th class="text-left">Copies</th>
+                                <th class="text-left">Amount</th>
+                                <th class="text-left">Screenshot</th>
+                                <th class="text-left">Transaction ID</th>
+                                <th class="text-left">Status</th>
+                                <th class="text-left">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="verificationTableBody">
+                            <tr><td colspan="8" class="text-center py-8 text-slate-400">No pending payments</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        
+        <!-- ==================== PRINT SUMMARY SECTION ==================== -->
+        <div id="printSummarySection" class="hidden">
+            <h2 class="text-2xl font-bold text-white mb-5 flex items-center gap-2">
+                <i class="fas fa-chart-bar text-indigo-400"></i> Print Summary
+            </h2>
+            <div class="grid md:grid-cols-3 gap-5 mb-6">
+                <div class="glass-card p-5 text-center">
+                    <div class="text-3xl font-bold text-indigo-400" id="summaryTotalStudents">0</div>
+                    <div class="text-slate-400 text-sm">Total Students</div>
+                </div>
+                <div class="glass-card p-5 text-center">
+                    <div class="text-3xl font-bold text-cyan-400" id="summaryTotalCopies">0</div>
+                    <div class="text-slate-400 text-sm">Total Copies</div>
+                </div>
+                <div class="glass-card p-5 text-center">
+                    <div class="text-3xl font-bold text-green-400" id="summaryTotalAmount">₹0</div>
+                    <div class="text-slate-400 text-sm">Total Collection</div>
+                </div>
+            </div>
+            
+            <div class="glass-card p-5">
+                <h3 class="text-lg font-bold text-white mb-3">Detailed Order Summary</h3>
+                <div class="overflow-x-auto">
+                    <table class="w-full table-glass">
+                        <thead>
+                            <tr class="text-slate-300 text-sm">
+                                <th class="text-left">Poll Name</th>
+                                <th class="text-left">Students</th>
+                                <th class="text-left">Copies</th>
+                                <th class="text-left">Amount</th>
+                                <th class="text-left">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="summaryTableBody">
+                            <tr><td colspan="5" class="text-center py-8 text-slate-400">No polls created yet</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="mt-5 flex justify-end">
+                    <button onclick="printSummary()" class="btn-gradient-primary px-6 py-2 rounded-xl text-sm">
+                        <i class="fas fa-print mr-2"></i> Print Summary Report
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- ==================== PROFILE SECTION ==================== -->
+        <div id="profileSection" class="hidden">
+            <div class="glass-card p-6 max-w-md mx-auto">
+                <div class="text-center">
+                    <div class="w-24 h-24 bg-gradient-to-br from-indigo-500 to-purple-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <i class="fas fa-chalkboard-user text-4xl text-white"></i>
+                    </div>
+                    <h2 id="profileName" class="text-2xl font-bold text-white">Organizer Name</h2>
+                    <p id="profileEmail" class="text-slate-400 mt-1">organizer@printshop.edu</p>
+                    <div class="mt-4">
+                        <span class="status-badge status-verified">Organizer / CR</span>
+                    </div>
+                </div>
+                <div class="mt-6 pt-4 border-t border-indigo-500/20">
+                    <button onclick="logoutUser()" class="w-full btn-gradient-secondary py-3 rounded-xl font-medium">
+                        <i class="fas fa-sign-out-alt mr-2"></i> Logout
+                    </button>
+                </div>
+            </div>
+        </div>
+    </main>
+    
+    <!-- ==================== FOOTER ==================== -->
+    <footer class="border-t border-indigo-500/20 py-6 px-5 mt-8">
+        <div class="max-w-7xl mx-auto text-center">
+            <p class="text-slate-500 text-sm">PrintShop – Built for Hackathon | Campus Bulk-Order & Queue Manager</p>
+            <div class="flex justify-center gap-4 mt-3">
+                <a href="#" class="text-slate-500 hover:text-indigo-400 transition"><i class="fab fa-github"></i></a>
+                <a href="#" class="text-slate-500 hover:text-indigo-400 transition"><i class="fab fa-linkedin"></i></a>
+                <a href="#" class="text-slate-500 hover:text-indigo-400 transition"><i class="fab fa-twitter"></i></a>
+            </div>
+        </div>
+    </footer>
+    
+    <script>
+        // ============================================
+        // ORGANIZER DASHBOARD - API INTEGRATION
+        // ============================================
+        
+        const API_URL = 'http://localhost:5000/api';
+        let polls = [];
+        let recentActivities = [];
+        let currentUser = JSON.parse(sessionStorage.getItem('user'));
+
+        if (!currentUser || currentUser.role !== 'cr') {
+            alert('Access denied. Please login as a Class Representative.');
+            window.location.href = 'login.html';
+        }
+
+        // Initialize UI with user data
+        document.getElementById('organizerName').textContent = currentUser.username;
+        document.getElementById('organizerEmail').textContent = currentUser.email || `${currentUser.username}@printshop.edu`;
+        document.getElementById('profileName').textContent = currentUser.username;
+        document.getElementById('profileEmail').textContent = currentUser.email || `${currentUser.username}@printshop.edu`;
+
+        // Fetch polls from API
+        async function fetchPolls() {
+            try {
+                const response = await fetch(`${API_URL}/polls`);
+                polls = await response.json();
+                updateDashboardStats();
+                renderActivePolls();
+                renderVerificationTable();
+                renderPrintSummary();
+            } catch (error) {
+                console.error('Error fetching polls:', error);
+            }
+        }
+
+        function updateDashboardStats() {
+            let totalStudents = 0;
+            let totalCopies = 0;
+            let totalAmount = 0;
+            
+            polls.forEach(poll => {
+                poll.responses.forEach(res => {
+                    totalStudents++;
+                    // Assuming responses have 'copies' if I add it to the model. 
+                    // For now, let's just count responses and use pricePerCopy.
+                    if (res.status === 'verified') {
+                        totalAmount += poll.pricePerCopy; 
+                        totalCopies += 1; // Default to 1 for now if copies not in response
+                    }
+                });
+            });
+            
+            document.getElementById('totalStudentsJoined').textContent = totalStudents;
+            document.getElementById('totalCopiesRequested').textContent = totalCopies;
+            document.getElementById('totalPaymentCollected').textContent = `₹${totalAmount}`;
+        }
+
+        function renderActivePolls() {
+            const activePolls = polls.filter(p => p.status === 'active' && new Date(p.expiryTime) > new Date());
+            const grid = document.getElementById('activePollsGrid');
+            
+            if (activePolls.length === 0) {
+                grid.innerHTML = '<div class="col-span-full text-center py-12 text-slate-400">No active polls. Create one to get started!</div>';
+                return;
+            }
+            
+            grid.innerHTML = activePolls.map(poll => {
+                const expiry = new Date(poll.expiryTime);
+                const remainingMin = Math.max(0, Math.floor((expiry - new Date()) / 60000));
+                const hours = Math.floor(remainingMin / 60);
+                const mins = remainingMin % 60;
+                
+                return `
+                    <div class="poll-card p-5">
+                        <div class="flex justify-between items-start mb-3">
+                            <h3 class="text-lg font-bold text-white">${poll.subject}</h3>
+                            <span class="status-badge status-verified">₹${poll.pricePerCopy}/copy</span>
+                        </div>
+                        <div class="space-y-2 mb-4">
+                            <p class="text-slate-400 text-sm"><i class="fas fa-users mr-2"></i> ${poll.responses.length} students joined</p>
+                            <p class="text-slate-400 text-sm"><i class="fas fa-clock mr-2"></i> Expires in: <span class="text-indigo-400">${hours}h ${mins}m</span></p>
+                        </div>
+                        <div class="flex gap-2">
+                            <button onclick="viewPollDetails('${poll.id}')" class="flex-1 btn-gradient-secondary py-2 rounded-xl text-sm">
+                                <i class="fas fa-eye mr-1"></i> View Details
+                            </button>
+                            <button onclick="closePoll('${poll.id}')" class="btn-danger py-2 px-3 rounded-xl text-sm">
+                                <i class="fas fa-times-circle"></i>
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function renderVerificationTable() {
+            const pendingResponses = [];
+            polls.forEach(poll => {
+                poll.responses.forEach(res => {
+                    if (res.status === 'pending') {
+                        pendingResponses.push({ ...res, pollId: poll.id, pollSubject: poll.subject });
+                    }
+                });
+            });
+            
+            const tbody = document.getElementById('verificationTableBody');
+            if (pendingResponses.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="8" class="text-center py-8 text-slate-400">No pending payments</td></tr>';
+                return;
+            }
+            
+            tbody.innerHTML = pendingResponses.map(res => `
+                <tr class="border-b border-indigo-500/10">
+                    <td class="py-3 text-white">${res.studentName}</td>
+                    <td class="py-3 text-slate-300">${res.pollSubject}</td>
+                    <td class="py-3 text-slate-300">1</td>
+                    <td class="py-3 text-slate-300">-</td>
+                    <td class="py-3"><button onclick="viewScreenshot('${res.paymentScreenshot}')" class="text-indigo-400 hover:text-indigo-300 text-sm"><i class="fas fa-image mr-1"></i> View</button></td>
+                    <td class="py-3 text-slate-300 text-sm">-</td>
+                    <td class="py-3"><span class="status-badge status-pending">Pending</span></td>
+                    <td class="py-3">
+                        <button onclick="verifyPayment('${res.pollId}', '${res.studentId}', 'verified')" class="bg-green-600/30 hover:bg-green-600/50 text-green-300 px-3 py-1 rounded-lg text-xs mr-1">
+                            <i class="fas fa-check"></i> Verify
+                        </button>
+                        <button onclick="verifyPayment('${res.pollId}', '${res.studentId}', 'rejected')" class="bg-red-600/30 hover:bg-red-600/50 text-red-300 px-3 py-1 rounded-lg text-xs">
+                            <i class="fas fa-times"></i> Reject
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        window.viewScreenshot = (path) => {
+            if (path) window.open(`http://localhost:5000${path}`, '_blank');
+            else alert('No screenshot available');
+        };
+
+        window.verifyPayment = async (pollId, studentId, status) => {
+            try {
+                await fetch(`${API_URL}/polls/${pollId}/verify`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ studentId, status })
+                });
+                fetchPolls();
+            } catch (error) {
+                console.error('Error verifying payment:', error);
+            }
+        };
+
+        window.closePoll = async (pollId) => {
+            if (confirm('Are you sure you want to close this poll?')) {
+                try {
+                    await fetch(`${API_URL}/polls/${pollId}/close`, { method: 'POST' });
+                    fetchPolls();
+                } catch (error) {
+                    console.error('Error closing poll:', error);
+                }
+            }
+        };
+
+        document.getElementById('createPollForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const subject = document.getElementById('assignmentName').value;
+            const price = parseInt(document.getElementById('pricePerCopy').value);
+            const expiry = parseInt(document.getElementById('expiryTime').value);
+            
+            const payload = {
+                title: subject,
+                subject,
+                pricePerCopy: price,
+                description: '',
+                qrCode: '', // In production, handle file upload for QR
+                expiryTime: expiry,
+                createdBy: currentUser.id
+            };
+
+            const response = await fetch(`${API_URL}/polls`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            if (response.ok) {
+                alert('Poll created successfully!');
+                fetchPolls();
+                showSection('dashboard');
+            }
+        });
+
+        window.showSection = (section) => {
+            ['dashboard', 'createPoll', 'activePolls', 'paymentVerification', 'printSummary', 'profile'].forEach(s => {
+                document.getElementById(`${s}Section`).classList.add('hidden');
+                document.getElementById(`nav${s.charAt(0).toUpperCase() + s.slice(1)}`).classList.remove('nav-active');
+            });
+            document.getElementById(`${section}Section`).classList.remove('hidden');
+            document.getElementById(`nav${section.charAt(0).toUpperCase() + section.slice(1)}`).classList.add('nav-active');
+        };
+
+        window.logoutUser = () => {
+            sessionStorage.clear();
+            window.location.href = 'index.html';
+        };
+
+        function renderPrintSummary() {
+            // Implementation similar to renderVerificationTable but for summary
+        }
+
+        // Initialize
+        fetchPolls();
+        setInterval(fetchPolls, 30000); // Polling for updates
+        showSection('dashboard');
+
+        console.log('✅ Organizer Dashboard logic updated for API');
+    </script>
+</body>
+</html>
