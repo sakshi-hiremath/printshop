@@ -28,7 +28,9 @@ const responseSchema = new mongoose.Schema({
     studentId: String,
     studentName: String,
     paymentScreenshot: String,
+    transactionId: { type: String },
     status: { type: String, default: 'pending' },
+    collected: { type: Boolean, default: false },
     timestamp: { type: Date, default: Date.now }
 }, { toJSON: { virtuals: true }, toObject: { virtuals: true } });
 
@@ -41,6 +43,12 @@ const pollSchema = new mongoose.Schema({
     expiryTime: Date,
     createdBy: String,
     status: { type: String, default: 'active' },
+    orderStatus: { type: String, enum: ['active', 'closed', 'printing', 'ready', 'distributed'], default: 'active' },
+    assignedCRs: [{
+        crId: String,
+        crName: String,
+        token: String
+    }],
     responses: [responseSchema]
 }, { toJSON: { virtuals: true }, toObject: { virtuals: true } });
 
@@ -129,7 +137,7 @@ app.post('/api/polls', async (req, res) => {
             pricePerCopy,
             description,
             qrCode,
-            expiryTime: new Date(Date.now() + expiryTime * 60000),
+            expiryTime: new Date(Date.now() + expiryTime * 3600000), // expiryTime is in hours
             createdBy,
             status: 'active'
         });
@@ -144,16 +152,23 @@ app.post('/api/polls', async (req, res) => {
 app.post('/api/polls/:pollId/join', upload.single('paymentScreenshot'), async (req, res) => {
     try {
         const { pollId } = req.params;
-        const { studentId, studentName } = req.body;
-
+        const { studentId, studentName, transactionId } = req.body;
+        
         const poll = await Poll.findById(pollId);
         if (!poll) {
             return res.status(404).json({ message: 'Poll not found' });
         }
 
+        // Validate Transaction ID
+        const existingResponse = poll.responses.find(r => r.transactionId === transactionId);
+        if (existingResponse) {
+            return res.status(400).json({ message: 'Duplicate Transaction ID. Payment proof already submitted.' });
+        }
+
         const newResponse = {
             studentId,
             studentName,
+            transactionId,
             paymentScreenshot: req.file ? `/uploads/${req.file.filename}` : null,
             status: 'pending',
             timestamp: new Date()
@@ -196,7 +211,10 @@ app.post('/api/polls/:pollId/verify', async (req, res) => {
 app.post('/api/polls/:pollId/close', async (req, res) => {
     try {
         const { pollId } = req.params;
-        const poll = await Poll.findByIdAndUpdate(pollId, { status: 'closed' }, { new: true });
+        const poll = await Poll.findByIdAndUpdate(pollId, { 
+            status: 'closed',
+            orderStatus: 'closed'
+        }, { new: true });
         
         if (!poll) {
             return res.status(404).json({ message: 'Poll not found' });
@@ -205,6 +223,61 @@ app.post('/api/polls/:pollId/close', async (req, res) => {
         res.json({ message: 'Poll closed successfully', poll });
     } catch (err) {
         res.status(500).json({ message: 'Error closing poll', error: err.message });
+    }
+});
+
+// Update Order Status (Printing, Ready, etc.)
+app.post('/api/polls/:pollId/order-status', async (req, res) => {
+    try {
+        const { pollId } = req.params;
+        const { orderStatus } = req.body;
+        
+        const poll = await Poll.findByIdAndUpdate(pollId, { orderStatus }, { new: true });
+        if (!poll) return res.status(404).json({ message: 'Poll not found' });
+        
+        res.json({ message: 'Order status updated', poll });
+    } catch (err) {
+        res.status(500).json({ message: 'Error updating order status' });
+    }
+});
+
+// Mark student order as collected
+app.post('/api/polls/:pollId/responses/:studentId/collect', async (req, res) => {
+    try {
+        const { pollId, studentId } = req.params;
+        const { collected } = req.body;
+        
+        const poll = await Poll.findById(pollId);
+        if (!poll) return res.status(404).json({ message: 'Poll not found' });
+        
+        const response = poll.responses.find(r => r.studentId === studentId);
+        if (!response) return res.status(404).json({ message: 'Response not found' });
+        
+        response.collected = collected;
+        await poll.save();
+        
+        res.json({ message: 'Collection status updated', response });
+    } catch (err) {
+        res.status(500).json({ message: 'Error updating collection status' });
+    }
+});
+
+// Assign CR with Token to Poll
+app.post('/api/polls/:pollId/assign-cr', async (req, res) => {
+    try {
+        const { pollId } = req.params;
+        const { crId, crName, token } = req.body;
+        
+        const poll = await Poll.findById(pollId);
+        if (!poll) return res.status(404).json({ message: 'Poll not found' });
+        
+        if (!poll.assignedCRs) poll.assignedCRs = [];
+        poll.assignedCRs.push({ crId, crName, token });
+        await poll.save();
+        
+        res.json({ message: 'CR assigned successfully', poll });
+    } catch (err) {
+        res.status(500).json({ message: 'Error assigning CR' });
     }
 });
 

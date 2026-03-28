@@ -127,6 +127,22 @@
             border: 1px solid rgba(239, 68, 68, 0.3);
         }
         
+        .status-ready {
+            background: rgba(34, 197, 94, 0.2);
+            color: #4ade80;
+            border: 1px solid rgba(34, 197, 94, 0.3);
+        }
+        .status-printing {
+            background: rgba(59, 130, 246, 0.2);
+            color: #93c5fd;
+            border: 1px solid rgba(59, 130, 246, 0.3);
+        }
+        .status-distributed {
+            background: rgba(139, 92, 246, 0.2);
+            color: #c4b5fd;
+            border: 1px solid rgba(139, 92, 246, 0.3);
+        }
+        
         /* Poll Card */
         .poll-card {
             background: rgba(10, 20, 35, 0.7);
@@ -236,6 +252,7 @@
                 <button onclick="showSection('createPoll')" id="navCreatePoll" class="text-slate-300 hover:text-indigo-400 transition text-sm font-medium px-3 py-1">Create Poll</button>
                 <button onclick="showSection('activePolls')" id="navActivePolls" class="text-slate-300 hover:text-indigo-400 transition text-sm font-medium px-3 py-1">Active Polls</button>
                 <button onclick="showSection('paymentVerification')" id="navPaymentVerification" class="text-slate-300 hover:text-indigo-400 transition text-sm font-medium px-3 py-1">Payment Verification</button>
+                <button onclick="showSection('distributionTracker')" id="navDistributionTracker" class="text-slate-300 hover:text-indigo-400 transition text-sm font-medium px-3 py-1">Distribution Tracker</button>
                 <button onclick="showSection('printSummary')" id="navPrintSummary" class="text-slate-300 hover:text-indigo-400 transition text-sm font-medium px-3 py-1">Print Summary</button>
                 <button onclick="showSection('profile')" id="navProfile" class="text-slate-300 hover:text-indigo-400 transition text-sm font-medium px-3 py-1">Profile</button>
                 <button onclick="logoutUser()" class="px-4 py-2 rounded-full bg-red-500/20 hover:bg-red-500/30 text-red-300 text-sm font-medium transition">
@@ -285,6 +302,11 @@
                     <i class="fas fa-copy text-3xl text-cyan-400 mb-2"></i>
                     <div class="text-2xl font-bold text-white" id="totalCopiesRequested">0</div>
                     <div class="text-slate-400 text-sm">Total Copies Requested</div>
+                </div>
+                <div class="summary-card glass-card p-5 text-center border-orange-500/30">
+                    <i class="fas fa-truck text-3xl text-orange-400 mb-2"></i>
+                    <div class="text-2xl font-bold text-white" id="pendingPickupsCount">0</div>
+                    <div class="text-slate-400 text-sm">Pending Pickups</div>
                 </div>
                 <div class="summary-card glass-card p-5 text-center">
                     <i class="fas fa-rupee-sign text-3xl text-green-400 mb-2"></i>
@@ -388,6 +410,45 @@
             </div>
         </div>
         
+        <!-- ==================== DISTRIBUTION TRACKER SECTION ==================== -->
+        <div id="distributionTrackerSection" class="hidden">
+            <h2 class="text-2xl font-bold text-white mb-5 flex items-center gap-2">
+                <i class="fas fa-shipping-fast text-indigo-400"></i> Order Distribution Tracker
+            </h2>
+            <div class="glass-card p-5 mb-6">
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                    <div>
+                    <h2 class="text-3xl font-extrabold text-white">Scale your printing.</h2>
+                    <p class="text-slate-400 text-sm mt-2">
+                        CRs can build bulk orders with clear timers & UPI verification. No more manual lists.
+                    </p>
+                    <div class="flex gap-2">
+                        <select id="distPollFilter" onchange="renderDistributionTracker()" class="input-glass px-4 py-2 text-sm">
+                            <option value="all">All Polls</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            <div class="glass-card overflow-hidden">
+                <div class="overflow-x-auto">
+                    <table class="w-full table-glass">
+                        <thead>
+                            <tr class="text-slate-300 text-sm">
+                                <th class="text-left">Student Name</th>
+                                <th class="text-left">Poll Name</th>
+                                <th class="text-left">Order Status</th>
+                                <th class="text-left">Collection Status</th>
+                                <th class="text-left">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="distributionTableBody">
+                            <tr><td colspan="5" class="text-center py-8 text-slate-400">No ready orders found</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        
         <!-- ==================== PRINT SUMMARY SECTION ==================== -->
         <div id="printSummarySection" class="hidden">
             <h2 class="text-2xl font-bold text-white mb-5 flex items-center gap-2">
@@ -434,7 +495,6 @@
             </div>
         </div>
         
-        <!-- ==================== PROFILE SECTION ==================== -->
         <div id="profileSection" class="hidden">
             <div class="glass-card p-6 max-w-md mx-auto">
                 <div class="text-center">
@@ -452,6 +512,28 @@
                         <i class="fas fa-sign-out-alt mr-2"></i> Logout
                     </button>
                 </div>
+            </div>
+        </div>
+
+        <!-- ==================== ASSIGN CR MODAL ==================== -->
+        <div id="assignCRModal" class="hidden fixed inset-0 modal-overlay z-[60] flex items-center justify-center p-4">
+            <div class="glass-card max-w-sm w-full p-6 text-center">
+                <h3 class="text-xl font-bold text-white mb-4">Assign CR to Poll</h3>
+                <form id="assignCRForm" class="space-y-4">
+                    <input type="hidden" id="assignPollId">
+                    <div>
+                        <label class="block text-left text-slate-300 text-sm mb-1">CR Username</label>
+                        <input type="text" id="crUsername" required class="input-glass w-full px-4 py-2 text-sm" placeholder="e.g. cr_token_1">
+                    </div>
+                    <div>
+                        <label class="block text-left text-slate-300 text-sm mb-1">Unique Token</label>
+                        <input type="text" id="crToken" required class="input-glass w-full px-4 py-2 text-sm" placeholder="e.g. MATH-01">
+                    </div>
+                    <div class="flex gap-2 mt-4">
+                        <button type="button" onclick="closeAssignCRModal()" class="flex-1 btn-gradient-secondary py-2 rounded-xl text-sm">Cancel</button>
+                        <button type="submit" class="flex-1 btn-gradient-primary py-2 rounded-xl text-sm font-bold">Assign</button>
+                    </div>
+                </form>
             </div>
         </div>
     </main>
@@ -507,15 +589,15 @@
             let totalStudents = 0;
             let totalCopies = 0;
             let totalAmount = 0;
+            let pendingPickups = 0;
             
             polls.forEach(poll => {
                 poll.responses.forEach(res => {
                     totalStudents++;
-                    // Assuming responses have 'copies' if I add it to the model. 
-                    // For now, let's just count responses and use pricePerCopy.
                     if (res.status === 'verified') {
                         totalAmount += poll.pricePerCopy; 
-                        totalCopies += 1; // Default to 1 for now if copies not in response
+                        totalCopies += 1; 
+                        if (!res.collected) pendingPickups++;
                     }
                 });
             });
@@ -523,6 +605,7 @@
             document.getElementById('totalStudentsJoined').textContent = totalStudents;
             document.getElementById('totalCopiesRequested').textContent = totalCopies;
             document.getElementById('totalPaymentCollected').textContent = `₹${totalAmount}`;
+            document.getElementById('pendingPickupsCount').textContent = pendingPickups;
         }
 
         function renderActivePolls() {
@@ -548,11 +631,27 @@
                         </div>
                         <div class="space-y-2 mb-4">
                             <p class="text-slate-400 text-sm"><i class="fas fa-users mr-2"></i> ${poll.responses.length} students joined</p>
-                            <p class="text-slate-400 text-sm"><i class="fas fa-clock mr-2"></i> Expires in: <span class="text-indigo-400">${hours}h ${mins}m</span></p>
+                            <p class="text-slate-400 text-sm"><i class="fas fa-clock mr-2"></i> ${remainingMin > 0 ? `Expires in: <span class="text-indigo-400">${hours}h ${mins}m</span>` : '<span class="text-red-500 font-bold">Expired</span>'}</p>
+                            <div class="flex items-center gap-2">
+                                <span class="text-slate-400 text-sm">Status:</span>
+                                <select onchange="updateOrderStatus('${poll.id}', this.value)" class="input-glass px-2 py-1 text-xs">
+                                    <option value="active" ${poll.orderStatus === 'active' ? 'selected' : ''}>Active</option>
+                                    <option value="closed" ${poll.orderStatus === 'closed' ? 'selected' : ''}>Closed</option>
+                                    <option value="printing" ${poll.orderStatus === 'printing' ? 'selected' : ''}>Printing</option>
+                                    <option value="ready" ${poll.orderStatus === 'ready' ? 'selected' : ''}>Ready</option>
+                                    <option value="distributed" ${poll.orderStatus === 'distributed' ? 'selected' : ''}>Distributed</option>
+                                </select>
+                            </div>
                         </div>
                         <div class="flex gap-2">
                             <button onclick="viewPollDetails('${poll.id}')" class="flex-1 btn-gradient-secondary py-2 rounded-xl text-sm">
                                 <i class="fas fa-eye mr-1"></i> View Details
+                            </button>
+                            <button onclick="copyShareLink('${poll.id}')" class="btn-gradient-primary px-3 rounded-xl text-sm" title="Share Poll Link">
+                                <i class="fas fa-share-alt"></i>
+                            </button>
+                        <button onclick="openAssignCRModal('${poll._id || poll.id}')" class="bg-purple-600/30 hover:bg-purple-600/50 text-purple-300 px-3 rounded-xl text-sm" title="Assign CR Token">
+                                <i class="fas fa-user-plus"></i>
                             </button>
                             <button onclick="closePoll('${poll.id}')" class="btn-danger py-2 px-3 rounded-xl text-sm">
                                 <i class="fas fa-times-circle"></i>
@@ -586,7 +685,7 @@
                     <td class="py-3 text-slate-300">1</td>
                     <td class="py-3 text-slate-300">-</td>
                     <td class="py-3"><button onclick="viewScreenshot('${res.paymentScreenshot}')" class="text-indigo-400 hover:text-indigo-300 text-sm"><i class="fas fa-image mr-1"></i> View</button></td>
-                    <td class="py-3 text-slate-300 text-sm">-</td>
+                    <td class="py-3 text-indigo-300 text-xs font-mono">${res.transactionId || 'N/A'}</td>
                     <td class="py-3"><span class="status-badge status-pending">Pending</span></td>
                     <td class="py-3">
                         <button onclick="verifyPayment('${res.pollId}', '${res.studentId}', 'verified')" class="bg-green-600/30 hover:bg-green-600/50 text-green-300 px-3 py-1 rounded-lg text-xs mr-1">
@@ -652,20 +751,149 @@
             });
 
             if (response.ok) {
-                alert('Poll created successfully!');
+                const data = await response.json();
+                const pollId = data.id || data._id;
                 fetchPolls();
                 showSection('dashboard');
+                
+                // Show share link immediately
+                const shareLink = `${window.location.origin}/student-dashboard.html?pollId=${pollId}`;
+                alert(`Poll created! Share this link with students:\n${shareLink}`);
+            }
+        });
+
+        window.copyShareLink = (pollId) => {
+            const shareLink = `${window.location.origin}/student-dashboard.html?pollId=${pollId}`;
+            navigator.clipboard.writeText(shareLink).then(() => {
+                alert('Share link copied to clipboard!');
+            });
+        };
+
+        window.openAssignCRModal = (pollId) => {
+            document.getElementById('assignPollId').value = pollId;
+            document.getElementById('assignCRModal').classList.remove('hidden');
+        };
+
+        window.closeAssignCRModal = () => {
+            document.getElementById('assignCRModal').classList.add('hidden');
+        };
+
+        document.getElementById('assignCRForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const pollId = document.getElementById('assignPollId').value;
+            const crName = document.getElementById('crUsername').value;
+            const token = document.getElementById('crToken').value;
+
+            if (!pollId) { alert('Error: No poll selected.'); return; }
+            if (!crName || !token) { alert('Please fill in all fields.'); return; }
+
+            try {
+                const response = await fetch(`${API_URL}/polls/${pollId}/assign-cr`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ crId: crName, crName, token })
+                });
+                const data = await response.json();
+                if (response.ok) {
+                    alert(`CR "${crName}" assigned with token "${token}" successfully!`);
+                    window.closeAssignCRModal();
+                    fetchPolls();
+                } else {
+                    alert('Failed to assign CR: ' + (data.message || 'Unknown error'));
+                }
+            } catch (error) {
+                console.error('Error assigning CR:', error);
+                alert('Network error. Make sure the server is running.');
             }
         });
 
         window.showSection = (section) => {
-            ['dashboard', 'createPoll', 'activePolls', 'paymentVerification', 'printSummary', 'profile'].forEach(s => {
-                document.getElementById(`${s}Section`).classList.add('hidden');
-                document.getElementById(`nav${s.charAt(0).toUpperCase() + s.slice(1)}`).classList.remove('nav-active');
+            const sections = ['dashboard', 'createPoll', 'activePolls', 'paymentVerification', 'distributionTracker', 'printSummary', 'profile'];
+            sections.forEach(s => {
+                const el = document.getElementById(`${s}Section`);
+                if (el) el.classList.add('hidden');
+                const nav = document.getElementById(`nav${s.charAt(0).toUpperCase() + s.slice(1)}`);
+                if (nav) nav.classList.remove('nav-active');
             });
             document.getElementById(`${section}Section`).classList.remove('hidden');
-            document.getElementById(`nav${section.charAt(0).toUpperCase() + section.slice(1)}`).classList.add('nav-active');
+            const activeNav = document.getElementById(`nav${section.charAt(0).toUpperCase() + section.slice(1)}`);
+            if (activeNav) activeNav.classList.add('nav-active');
+            
+            if (section === 'distributionTracker') renderDistributionTracker();
         };
+
+        window.updateOrderStatus = async (pollId, orderStatus) => {
+            try {
+                await fetch(`${API_URL}/polls/${pollId}/order-status`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ orderStatus })
+                });
+                fetchPolls();
+            } catch (error) {
+                console.error('Error updating order status:', error);
+            }
+        };
+
+        window.markCollected = async (pollId, studentId, collected) => {
+            try {
+                await fetch(`${API_URL}/polls/${pollId}/responses/${studentId}/collect`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ collected })
+                });
+                fetchPolls();
+            } catch (error) {
+                console.error('Error marking collection:', error);
+            }
+        };
+
+        function renderDistributionTracker() {
+            const filter = document.getElementById('distPollFilter').value;
+            const select = document.getElementById('distPollFilter');
+            
+            // Update filter options
+            const currentVal = select.value;
+            select.innerHTML = '<option value="all">All Polls</option>' + 
+                polls.map(p => `<option value="${p.id || p._id}" ${currentVal === (p.id || p._id) ? 'selected' : ''}>${p.subject}</option>`).join('');
+
+            const distributionData = [];
+            polls.forEach(poll => {
+                if (filter !== 'all' && (poll.id || poll._id) !== filter) return;
+                
+                poll.responses.forEach(res => {
+                    if (res.status === 'verified') {
+                        distributionData.push({ ...res, pollId: poll.id || poll._id, pollSubject: poll.subject, pollOrderStatus: poll.orderStatus });
+                    }
+                });
+            });
+
+            const tbody = document.getElementById('distributionTableBody');
+            if (distributionData.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" class="text-center py-8 text-slate-400">No ready orders found</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = distributionData.map(res => `
+                <tr class="border-b border-indigo-500/10">
+                    <td class="py-3 text-white">${res.studentName}</td>
+                    <td class="py-3 text-slate-300">${res.pollSubject}</td>
+                    <td class="py-3"><span class="status-badge status-${res.pollOrderStatus || 'active'}">${res.pollOrderStatus || 'active'}</span></td>
+                    <td class="py-3"><span class="status-badge ${res.collected ? 'status-ready' : 'status-pending'}">${res.collected ? 'Collected' : 'Pending'}</span></td>
+                    <td class="py-3">
+                        ${!res.collected ? `
+                            <button onclick="markCollected('${res.pollId}', '${res.studentId}', true)" class="bg-indigo-600/30 hover:bg-indigo-600/50 text-indigo-300 px-3 py-1 rounded-lg text-xs">
+                                <i class="fas fa-check mr-1"></i> Mark Collected
+                            </button>
+                        ` : `
+                            <button onclick="markCollected('${res.pollId}', '${res.studentId}', false)" class="text-slate-500 text-xs hover:text-slate-400">
+                                <i class="fas fa-undo mr-1"></i> Undo
+                            </button>
+                        `}
+                    </td>
+                </tr>
+            `).join('');
+        }
 
         window.logoutUser = () => {
             sessionStorage.clear();
